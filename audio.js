@@ -17,8 +17,36 @@ function getAudioCtx() {
 }
 
 // Разморозка при первом взаимодействии (на iOS обязательно)
+// + обход аппаратного переключателя «Без звука» на iPhone:
+//   играем тихий <audio> loop → Safari переключается в media-playback режим
+let silentAudio = null;
+
 function unlockAudio() {
+  // 1. Создаём/резюмим Web Audio Context
   getAudioCtx();
+
+  // 2. Обход беззвучного режима iPhone:
+  //    тихий зацикленный <audio> заставляет Safari играть звук даже при mute switch
+  if (!silentAudio) {
+    // Тишина 0.5с в формате WAV, base64 (44 байта PCM)
+    silentAudio = new Audio(
+      'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+    );
+    silentAudio.loop = true;
+    silentAudio.volume = 0.01; // Практически не слышно
+    silentAudio.play().catch(() => {}); // Игнорируем ошибку если не удалось
+  }
+
+  // 3. Играем тихий буфер через Web Audio (ещё один способ разблокировки)
+  try {
+    const ctx = getAudioCtx();
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch(e) {}
+
   document.removeEventListener('touchstart', unlockAudio, true);
   document.removeEventListener('touchend', unlockAudio, true);
   document.removeEventListener('click', unlockAudio, true);

@@ -3,7 +3,7 @@
 // Стратегия: Network First (обновления приходят сразу, оффлайн из кеша)
 // ====================================================================
 
-const CACHE_NAME = 'pomoshchnik-v3';
+const CACHE_NAME = 'pomoshchnik-v4';
 const ASSETS = [
   '/',
   '/index.html',
