@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Маленький помощник | Хочу нажимать кнопочки!</title>
+  <meta name="description" content="Пусть малыш нажимает все кнопочки, которые захочет! Безопасная игровая площадка для малышей." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#12151c" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Помощник" />
+</head>
+<body>
+
+  <!-- ===== ГЛАВНОЕ МЕНЮ ===== -->
+  <div id="home" class="page active">
+    <!-- Анимированные мягкие блобы -->
+    <div class="blob-bg">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    
+    <div class="home-content">
+      <div class="home-header">
+        <h1 class="home-title">
+          <span class="title-icon">🐾</span>
+          Маленький Помощник
+        </h1>
+        <p class="home-slogan">Хочу понажимать кнопочки!!!</p>
+      </div>
+      
+      <div class="game-grid">
+        <!-- Game 1: Zoo -->
+        <div class="game-card card-zoo" onclick="openGame('zoo')">
+          <div class="card-glow"></div>
+          <div class="card-inner">
+            <div class="card-emoji-wrap">
+              <span class="card-emoji">🦁</span>
+            </div>
+            <h2 class="card-title">Зоопарк на столе</h2>
+            <p class="card-desc">Нажимай — появляются зверята!</p>
+            <div class="card-btn">▶ Играть</div>
+          </div>
+        </div>
+
+        <!-- Game 2: Flowers -->
+        <div class="game-card card-flowers" onclick="openGame('flowers')">
+          <div class="card-glow"></div>
+          <div class="card-inner">
+            <div class="card-emoji-wrap">
+              <span class="card-emoji">🌸</span>
+            </div>
+            <h2 class="card-title">Цветочная поляна</h2>
+            <p class="card-desc">Води мышкой — растут цветы!</p>
+            <div class="card-btn">▶ Играть</div>
+          </div>
+        </div>
+
+        <!-- Game 3: Music -->
+        <div class="game-card card-music" onclick="openGame('music')">
+          <div class="card-glow"></div>
+          <div class="card-inner">
+            <div class="card-emoji-wrap">
+              <span class="card-emoji">🎹</span>
+            </div>
+            <h2 class="card-title">Музыкальный отдел</h2>
+            <p class="card-desc">Жми клавиши — играй музыку!</p>
+            <div class="card-btn">▶ Играть</div>
+          </div>
+        </div>
+
+        <!-- Game 4: Important Report -->
+        <div class="game-card card-report" onclick="openGame('report')">
+          <div class="card-glow"></div>
+          <div class="card-inner">
+            <div class="card-emoji-wrap">
+              <span class="card-emoji">📋</span>
+            </div>
+            <h2 class="card-title">Важный отчёт</h2>
+            <p class="card-desc">Ставь печати и штампы!</p>
+            <div class="card-btn">▶ Играть</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-footer">
+        <p class="exit-hint">🔒 Для возврата из игры: зажми <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd> на 3 сек. На телефоне — тройной тап на 🔓 в углу.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ЭКРАН С НАСТРОЙКАМИ ===== -->
+  <div id="gameSetup" class="page">
+    <div class="blob-bg">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
+    <div class="setup-content">
+      <button class="back-btn" onclick="showHome()">← В меню</button>
+      <h1 class="setup-title" id="setupTitle">Игра</h1>
+      <p class="setup-subtitle" id="setupSubtitle">Описание функции...</p>
+
+      <div class="setup-options" id="setupOptions">
+        <label class="toggle-control">
+          <input type="checkbox" id="setupCheckboxSound" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">🔊 Включить звуки</span>
+        </label>
+      </div>
+
+      <button class="start-btn pulse" id="startBtn" onclick="startGame()">
+        <span>🚀</span> Поехали!
+      </button>
+
+      <p class="setup-exit-hint">
+        🔒 Зажми <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd> на 3 секунды, чтобы выйти
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== ИГРОВАЯ ЗОНА ===== -->
+  <div id="gameArea" class="page game-area">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="gameOverlay"></div>
+    
+    <div id="clickCounter" class="click-counter">🌟 0</div>
+    <div id="actionHint" class="action-hint">
+      <span class="hint-icon" id="hintIcon">👆</span>
+      <span class="hint-text" id="hintText">Нажми!</span>
+    </div>
+
+    <div id="mobileExitZone" class="mobile-exit-zone">🔓</div>
+    <div id="mobileExitDialog" class="mobile-exit-dialog hidden">
+      <p>Выйти в меню?</p>
+      <button onclick="showHome()" class="mobile-exit-btn exit-yes">Да, выйти</button>
+      <button onclick="closeMobileExit()" class="mobile-exit-btn exit-no">Нет, играть!</button>
+    </div>
+
+    <div id="exitProgress" class="exit-progress hidden">
+      <div class="exit-progress-bar"></div>
+      <p>Отпусти, чтобы остаться баловаться...</p>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('🐾 SW registered:', reg.scope))
+          .catch(err => console.warn('SW failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
