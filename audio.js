@@ -2,8 +2,30 @@
 // Web Audio API — Мелодичный синтезатор «Музыкальная шкатулка»
 // Все звуки построены на пентатонике для гармоничного звучания
 // ====================================================================
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
 let soundEnabled = true;
+
+// Ленивая инициализация AudioContext (iOS требует user gesture)
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+// Разморозка при первом взаимодействии (на iOS обязательно)
+function unlockAudio() {
+  getAudioCtx();
+  document.removeEventListener('touchstart', unlockAudio, true);
+  document.removeEventListener('touchend', unlockAudio, true);
+  document.removeEventListener('click', unlockAudio, true);
+}
+document.addEventListener('touchstart', unlockAudio, true);
+document.addEventListener('touchend', unlockAudio, true);
+document.addEventListener('click', unlockAudio, true);
 
 // Пентатоника C мажор — любые ноты из неё звучат вместе красиво
 const PENTATONIC = [
@@ -19,16 +41,17 @@ function randomNote() {
 const AudioSynth = {
   enable() {
     soundEnabled = true;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    getAudioCtx(); // Создаём/резюмим контекст
   },
   disable() { soundEnabled = false; },
 
   // ---- Утилита: мягкий осциллятор с атакой и затуханием ----
   _soft(type, freq, duration, volume = 0.15, attackTime = 0.02) {
     if (!soundEnabled) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.type = type;
     o.frequency.setValueAtTime(freq, t);
     // Мягкая атака (не щелчок!)
@@ -37,7 +60,7 @@ const AudioSynth = {
     // Плавное затухание
     g.gain.exponentialRampToValueAtTime(0.001, t + duration);
     o.connect(g);
-    g.connect(audioCtx.destination);
+    g.connect(ctx.destination);
     o.start(t);
     o.stop(t + duration);
   },
@@ -71,9 +94,10 @@ const AudioSynth = {
   // 🐱 Кошка — мягкое «мяу» через глиссандо + колокольчик
   playCat() {
     if (!soundEnabled) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.type = 'sine';
     // Глиссандо вверх-вниз (мяу)
     o.frequency.setValueAtTime(400, t);
@@ -82,7 +106,7 @@ const AudioSynth = {
     g.gain.setValueAtTime(0.001, t);
     g.gain.linearRampToValueAtTime(0.18, t + 0.03);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
-    o.connect(g); g.connect(audioCtx.destination);
+    o.connect(g); g.connect(ctx.destination);
     o.start(t); o.stop(t + 0.45);
     // Мелодичная «нотка» сверху
     this._bell(659.25, 0.5, 0.08); // E5
@@ -101,9 +125,10 @@ const AudioSynth = {
   // 🦁🐘🐻 Рычание — низкий мелодичный бас + обертон
   playRoar() {
     if (!soundEnabled) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.type = 'triangle'; // Мягче чем sawtooth
     o.frequency.setValueAtTime(100, t);
     o.frequency.linearRampToValueAtTime(160, t + 0.15);
@@ -111,7 +136,7 @@ const AudioSynth = {
     g.gain.setValueAtTime(0.001, t);
     g.gain.linearRampToValueAtTime(0.2, t + 0.05);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
-    o.connect(g); g.connect(audioCtx.destination);
+    o.connect(g); g.connect(ctx.destination);
     o.start(t); o.stop(t + 0.55);
     // Мелодичный обертон
     this._bell(261.63, 0.4, 0.06); // C4
@@ -131,9 +156,10 @@ const AudioSynth = {
   // 🐸 Лягушка — низкий «квак» + звонкий отскок
   playFrog() {
     if (!soundEnabled) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.type = 'sine';
     o.frequency.setValueAtTime(350, t);
     o.frequency.exponentialRampToValueAtTime(120, t + 0.12);
@@ -141,18 +167,18 @@ const AudioSynth = {
     g.gain.setValueAtTime(0.001, t);
     g.gain.linearRampToValueAtTime(0.15, t + 0.01);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-    o.connect(g); g.connect(audioCtx.destination);
+    o.connect(g); g.connect(ctx.destination);
     o.start(t); o.stop(t + 0.25);
-    // Звонкий «блинк»
-    setTimeout(() => this._bell(440, 0.3, 0.07), 100); // A4
+    setTimeout(() => this._bell(440, 0.3, 0.07), 100);
   },
 
   // 🐬 Дельфин — мелодичный свист вверх-вниз
   playDolphin() {
     if (!soundEnabled) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.type = 'sine';
     o.frequency.setValueAtTime(600, t);
     o.frequency.exponentialRampToValueAtTime(1400, t + 0.12);
@@ -160,10 +186,9 @@ const AudioSynth = {
     g.gain.setValueAtTime(0.001, t);
     g.gain.linearRampToValueAtTime(0.12, t + 0.02);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-    o.connect(g); g.connect(audioCtx.destination);
+    o.connect(g); g.connect(ctx.destination);
     o.start(t); o.stop(t + 0.4);
-    // Сияющий обертон
-    this._bell(1318.51, 0.4, 0.05); // E6
+    this._bell(1318.51, 0.4, 0.05);
   },
 
   // 🐝 Пчёлка — мягкое жужжание + мелодичный тон

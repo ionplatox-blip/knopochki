@@ -248,35 +248,60 @@ window.addEventListener('touchmove', (e) => {
 let mobileExitTaps = [];
 const mobileExitZone = document.getElementById('mobileExitZone');
 const mobileExitDialog = document.getElementById('mobileExitDialog');
+const exitYesBtn = document.getElementById('exitYesBtn');
+const exitNoBtn = document.getElementById('exitNoBtn');
 
-mobileExitZone.addEventListener('click', (e) => {
-  e.stopPropagation();
-  const now = Date.now();
-  mobileExitTaps.push(now);
-  // Оставляем только тапы за последнюю 1 секунду
-  mobileExitTaps = mobileExitTaps.filter(t => now - t < 1000);
-  if (mobileExitTaps.length >= 3) {
-    mobileExitTaps = [];
-    mobileExitDialog.classList.remove('hidden');
-  }
-});
+function openMobileExitDialog() {
+  mobileExitTaps = [];
+  mobileExitDialog.classList.remove('hidden');
+}
 
-// Тач-версия тоже нужна (click может не сработать на iOS)
+function closeMobileExitDialog() {
+  mobileExitDialog.classList.add('hidden');
+}
+window.closeMobileExit = closeMobileExitDialog;
+
+// Тройной тап по замку
 mobileExitZone.addEventListener('touchend', (e) => {
   e.preventDefault();
   e.stopPropagation();
   const now = Date.now();
   mobileExitTaps.push(now);
   mobileExitTaps = mobileExitTaps.filter(t => now - t < 1000);
-  if (mobileExitTaps.length >= 3) {
-    mobileExitTaps = [];
-    mobileExitDialog.classList.remove('hidden');
-  }
+  if (mobileExitTaps.length >= 3) openMobileExitDialog();
 });
 
-window.closeMobileExit = function() {
-  mobileExitDialog.classList.add('hidden');
-};
+mobileExitZone.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const now = Date.now();
+  mobileExitTaps.push(now);
+  mobileExitTaps = mobileExitTaps.filter(t => now - t < 1000);
+  if (mobileExitTaps.length >= 3) openMobileExitDialog();
+});
+
+// --- Кнопки диалога: touchend + click (iOS и десктоп) ---
+function handleExitYes(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  closeMobileExitDialog();
+  showHome();
+}
+
+function handleExitNo(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  closeMobileExitDialog();
+}
+
+exitYesBtn.addEventListener('touchend', handleExitYes);
+exitYesBtn.addEventListener('click', handleExitYes);
+exitNoBtn.addEventListener('touchend', handleExitNo);
+exitNoBtn.addEventListener('click', handleExitNo);
+
+// Блокируем любые touch-события внутри диалога (чтобы не проваливались в игру)
+mobileExitDialog.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
+mobileExitDialog.addEventListener('touchend', (e) => e.stopPropagation(), { passive: false });
+mobileExitDialog.addEventListener('click', (e) => e.stopPropagation());
 
 // ====== НАСТРОЙКИ КАНВАСА ======
 // Сохраняем CSS-размеры для корректного маппинга координат
