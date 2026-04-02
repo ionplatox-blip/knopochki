@@ -95,6 +95,15 @@
       <div class="home-footer">
         <p class="exit-hint">🔒 Для возврата из игры: зажми <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd> на 3 сек. На телефоне — тройной тап на 🔓 в углу.</p>
       </div>
+
+      <div class="site-footer">
+        <p class="footer-made">Сделано с ❤️ для маленьких помощников</p>
+        <div class="footer-links">
+          <a href="https://t.me/ionplatox" target="_blank" rel="noopener" class="footer-link">💬 Telegram</a>
+          <a href="mailto:ionplatox@gmail.com" class="footer-link">📧 Написать</a>
+        </div>
+        <p class="footer-version">v1.0 · 2026</p>
+      </div>
     </div>
   </div>
 
@@ -163,6 +172,58 @@
           .catch(err => console.warn('SW failed:', err));
       });
     }
+  </script>
+
+  <!-- Яндекс.Метрика (ID: 108370447) -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();
+    for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+    k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+    (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+    ym(108370447, "init", {
+      clickmap: true,
+      trackLinks: true,
+      accurateTrackBounce: true,
+      webvisor: true,
+      trackHash: true
+    });
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/108370447" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+
+  <!-- Аналитика игровых сессий -->
+  <script>
+    // Трекинг событий
+    window.trackEvent = function(goal, params) {
+      try {
+        if (typeof ym === 'function') ym(108370447, 'reachGoal', goal, params || {});
+      } catch(e) {}
+      console.log('📊', goal, params || '');
+    };
+
+    // Трекинг длины сессии
+    let sessionStart = null;
+    const origStartGame = window.startGame;
+    window.startGame = function(game) {
+      sessionStart = Date.now();
+      trackEvent('game_start', { game: game });
+      origStartGame(game);
+    };
+
+    const origShowHome = window.showHome;
+    window.showHome = function() {
+      if (sessionStart) {
+        const dur = Math.round((Date.now() - sessionStart) / 1000);
+        trackEvent('game_exit', { duration_sec: dur });
+        sessionStart = null;
+      }
+      origShowHome();
+    };
+
+    // PWA install tracking
+    window.addEventListener('beforeinstallprompt', () => trackEvent('pwa_prompt'));
+    window.addEventListener('appinstalled', () => trackEvent('pwa_installed'));
   </script>
 </body>
 </html>
