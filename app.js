@@ -125,6 +125,10 @@ function stopGame() {
   if(clickCounterEl) clickCounterEl.style.display = 'none';
   if(actionHintEl) actionHintEl.style.display = 'none';
   
+  // Прячем диалог выхода и прогресс-бар чтобы они не висели в следующей игре
+  if(mobileExitDialog) mobileExitDialog.classList.add('hidden');
+  if(exitUi) exitUi.classList.add('hidden');
+  
   if (window.gameEngines) {
     Object.values(window.gameEngines).forEach(engine => {
       if(engine.cleanup) engine.cleanup();
@@ -201,6 +205,7 @@ window.addEventListener('keyup', (e) => {
 // ====== ОБРАБОТКА МЫШИ ======
 window.addEventListener('mousedown', (e) => {
   if (!isGameRunning) return;
+  if (mobileExitDialog && !mobileExitDialog.classList.contains('hidden')) return;
   e.preventDefault();
   if (!handleUserInput()) return;
   if (window.gameEngines && window.gameEngines[currentGame] && window.gameEngines[currentGame].onMouseDown) {
@@ -219,6 +224,8 @@ window.addEventListener('mousemove', (e) => {
 // ====== ОБРАБОТКА ТАЧА (МОБИЛЬНЫЕ) ======
 window.addEventListener('touchstart', (e) => {
   if (!isGameRunning) return;
+  // Не перехватываем, если открыт диалог выхода — пусть кнопки работают
+  if (mobileExitDialog && !mobileExitDialog.classList.contains('hidden')) return;
   e.preventDefault(); // Блокируем зум и скролл в игре
   if (!handleUserInput()) return;
   const touch = e.touches[0];
@@ -229,6 +236,7 @@ window.addEventListener('touchstart', (e) => {
 
 window.addEventListener('touchmove', (e) => {
   if (!isGameRunning) return;
+  if (mobileExitDialog && !mobileExitDialog.classList.contains('hidden')) return;
   e.preventDefault();
   const touch = e.touches[0];
   if (touch && window.gameEngines && window.gameEngines[currentGame] && window.gameEngines[currentGame].onMouseMove) {
