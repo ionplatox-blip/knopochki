@@ -1,9 +1,9 @@
 // ====================================================================
 // Service Worker — Маленький Помощник PWA
-// Стратегия: Cache First (всё статическое, нет бэкенда)
+// Стратегия: Network First (обновления приходят сразу, оффлайн из кеша)
 // ====================================================================
 
-const CACHE_NAME = 'pomoshchnik-v1';
+const CACHE_NAME = 'pomoshchnik-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -15,16 +15,16 @@ const ASSETS = [
   '/icons/icon-512.png'
 ];
 
-// Установка: кешируем все файлы
+// Установка: кешируем все файлы, активируемся СРАЗУ
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting()) // Активируем сразу
+      .then(() => self.skipWaiting())
   );
 });
 
-// Активация: чистим старые кеши
+// Активация: удаляем ВСЕ старые кеши, берём контроль сразу
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -33,25 +33,26 @@ self.addEventListener('activate', (event) => {
           .filter(key => key !== CACHE_NAME)
           .map(key => caches.delete(key))
       )
-    ).then(() => self.clients.claim()) // Берём контроль сразу
+    ).then(() => self.clients.claim())
   );
 });
 
-// Fetch: Cache First — сначала кеш, потом сеть
+// Fetch: Network First — сначала сеть, при ошибке кеш (оффлайн)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          // Кешируем новые запросы (шрифты Google Fonts и т.д.)
-          if (response.ok && event.request.method === 'GET') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        });
+    fetch(event.request)
+      .then(response => {
+        // Обновляем кеш свежей версией
+        if (response.ok && event.request.method === 'GET') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
       })
-      .catch(() => caches.match('/index.html')) // Фоллбек на главную
+      .catch(() => {
+        // Оффлайн — отдаём из кеша
+        return caches.match(event.request)
+          .then(cached => cached || caches.match('/index.html'));
+      })
   );
 });
