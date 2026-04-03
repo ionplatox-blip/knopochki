@@ -5,6 +5,33 @@ let globalClickCount = 0;
 let lastInputTime = 0;
 const INPUT_COOLDOWN = 150; // ms
 
+// ====== FULLSCREEN + LOCK ======
+function enterFullscreen() {
+  const el = document.documentElement;
+  const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (rfs) {
+    rfs.call(el).catch(() => {});
+  }
+}
+
+function exitFullscreen() {
+  const efs = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+  if (efs && document.fullscreenElement) {
+    efs.call(document).catch(() => {});
+  }
+}
+
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+// beforeunload — предупреждение при закрытии вкладки
+function warnBeforeLeave(e) {
+  e.preventDefault();
+  e.returnValue = '';
+  return '';
+}
+
 // ====== ЭЛЕМЕНТЫ DOM ======
 const pages = {
   home: document.getElementById('home'),
@@ -39,6 +66,9 @@ function showPage(pageId) {
 
 window.showHome = function() {
   stopGame();
+  // UNLOCK: выходим из fullscreen и снимаем beforeunload
+  exitFullscreen();
+  window.removeEventListener('beforeunload', warnBeforeLeave);
   showPage('home');
 }
 
@@ -59,6 +89,10 @@ window.startGame = function() {
   if (!soundToggle.checked) {
     AudioSynth.disable();
   }
+
+  // LOCK: полноэкранный режим + защита от закрытия
+  enterFullscreen();
+  window.addEventListener('beforeunload', warnBeforeLeave);
 
   showPage('game');
   isGameRunning = true;
@@ -154,9 +188,27 @@ function updateExitProgress(percent) {
 
 const keysHeld = new Set();
 
+// ====== АГРЕССИВНАЯ БЛОКИРОВКА КЛАВИШ ======
+// Блокируем ВСЁ что может вывести из игры: F1-F12, Tab, Alt, Ctrl+*, Meta+*
 window.addEventListener('keydown', (e) => {
   if (!isGameRunning) return;
-  e.preventDefault(); // Блокировка стандартных действий браузера для безопасности игры
+
+  // Блокируем всё кроме Ctrl+Shift+Q (наш выход)
+  const dominated =
+    e.key === 'Tab' ||
+    e.key === 'Escape' ||
+    e.key === 'Alt' ||
+    e.key === 'Meta' ||
+    e.key === 'ContextMenu' ||
+    (e.key.startsWith('F') && e.key.length > 1 && e.key.length <= 3) || // F1-F12
+    e.ctrlKey || e.metaKey || e.altKey;
+
+  if (dominated) {
+    e.preventDefault();
+    e.stopPropagation();
+  } else {
+    e.preventDefault();
+  }
 
   const key = e.key.toLowerCase();
   keysHeld.add(key);
@@ -207,6 +259,8 @@ window.addEventListener('mousedown', (e) => {
   if (!isGameRunning) return;
   if (mobileExitDialog && !mobileExitDialog.classList.contains('hidden')) return;
   e.preventDefault();
+  // Авто-восстановление fullscreen если ребёнок случайно вышел (Esc)
+  if (!isFullscreen()) enterFullscreen();
   if (!handleUserInput()) return;
   if (window.gameEngines && window.gameEngines[currentGame] && window.gameEngines[currentGame].onMouseDown) {
     window.gameEngines[currentGame].onMouseDown(e.clientX, e.clientY);
@@ -227,6 +281,8 @@ window.addEventListener('touchstart', (e) => {
   // Не перехватываем, если открыт диалог выхода — пусть кнопки работают
   if (mobileExitDialog && !mobileExitDialog.classList.contains('hidden')) return;
   e.preventDefault(); // Блокируем зум и скролл в игре
+  // Авто-восстановление fullscreen
+  if (!isFullscreen()) enterFullscreen();
   if (!handleUserInput()) return;
   const touch = e.touches[0];
   if (touch && window.gameEngines && window.gameEngines[currentGame] && window.gameEngines[currentGame].onMouseDown) {
@@ -243,6 +299,14 @@ window.addEventListener('touchmove', (e) => {
     window.gameEngines[currentGame].onMouseMove(touch.clientX, touch.clientY);
   }
 }, { passive: false });
+
+// ====== БЛОКИРОВКА КОНТЕКСТНОГО МЕНЮ И ПРАВОГО КЛИКА ======
+window.addEventListener('contextmenu', (e) => {
+  if (isGameRunning) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+});
 
 // ====== МОБИЛЬНЫЙ ВЫХОД (ТРОЙНОЙ ТАП) ======
 let mobileExitTaps = [];
