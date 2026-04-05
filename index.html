@@ -124,6 +124,17 @@
           <span class="toggle-slider"></span>
           <span class="toggle-label">🔊 Включить звуки</span>
         </label>
+
+        <!-- Таймер -->
+        <div class="timer-selector">
+          <span class="timer-label">⏱ Время игры:</span>
+          <div class="timer-options">
+            <button class="timer-btn" data-minutes="3">3 мин</button>
+            <button class="timer-btn active" data-minutes="5">5 мин</button>
+            <button class="timer-btn" data-minutes="10">10 мин</button>
+            <button class="timer-btn" data-minutes="0">∞</button>
+          </div>
+        </div>
       </div>
 
       <button class="start-btn pulse" id="startBtn" onclick="startGame()">
@@ -138,6 +149,11 @@
 
   <!-- ===== ИГРОВАЯ ЗОНА ===== -->
   <div id="gameArea" class="page game-area">
+    <!-- Таймер-полоска вверху -->
+    <div id="gameTimerBar" class="game-timer-bar hidden">
+      <div id="gameTimerFill" class="game-timer-fill"></div>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
     
     <div id="gameOverlay"></div>
@@ -146,6 +162,15 @@
     <div id="actionHint" class="action-hint">
       <span class="hint-icon" id="hintIcon">👆</span>
       <span class="hint-text" id="hintText">Нажми!</span>
+    </div>
+
+    <!-- Экран «Время вышло!» -->
+    <div id="timeUpOverlay" class="time-up-overlay hidden">
+      <div class="time-up-content">
+        <div class="time-up-emoji">🌟</div>
+        <h2 class="time-up-title">Отличная работа!</h2>
+        <p class="time-up-sub">Время игры закончилось</p>
+      </div>
     </div>
 
     <div id="mobileExitZone" class="mobile-exit-zone">🔓</div>

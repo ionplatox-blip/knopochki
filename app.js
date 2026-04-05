@@ -5,6 +5,11 @@ let globalClickCount = 0;
 let lastInputTime = 0;
 const INPUT_COOLDOWN = 150; // ms
 
+// ====== ТАЙМЕР ======
+let gameTimerInterval = null;
+let gameTimerEnd = 0;
+let selectedMinutes = 5; // по умолчанию 5 минут
+
 // ====== FULLSCREEN + LOCK ======
 function enterFullscreen() {
   const el = document.documentElement;
@@ -123,10 +128,13 @@ window.startGame = function() {
   
   resizeCanvas();
   
-  // Вызов инициализатора текущей игры (описано ниже в закомментированном блоке для следующих задач)
+  // Вызов инициализатора текущей игры
   if (window.gameEngines && window.gameEngines[currentGame] && window.gameEngines[currentGame].init) {
     window.gameEngines[currentGame].init();
   }
+
+  // Запуск таймера
+  startGameTimer();
 }
 
 function handleUserInput() {
@@ -147,7 +155,6 @@ function handleUserInput() {
   
   return true;
 }
-
 function stopGame() {
   isGameRunning = false;
   currentGame = null;
@@ -160,12 +167,95 @@ function stopGame() {
   // Прячем диалог выхода и прогресс-бар чтобы они не висели в следующей игре
   if(mobileExitDialog) mobileExitDialog.classList.add('hidden');
   if(exitUi) exitUi.classList.add('hidden');
+
+  // Останавливаем таймер
+  stopGameTimer();
   
   if (window.gameEngines) {
     Object.values(window.gameEngines).forEach(engine => {
       if(engine.cleanup) engine.cleanup();
     });
   }
+}
+
+// ====== ТАЙМЕР: ЛОГИКА ======
+const gameTimerBar = document.getElementById('gameTimerBar');
+const gameTimerFill = document.getElementById('gameTimerFill');
+const timeUpOverlay = document.getElementById('timeUpOverlay');
+
+// Инициализация кнопок выбора времени
+document.querySelectorAll('.timer-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.timer-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedMinutes = parseInt(btn.dataset.minutes, 10);
+  });
+});
+
+function startGameTimer() {
+  // Скрыть оверлей времени если был
+  if (timeUpOverlay) timeUpOverlay.classList.add('hidden');
+
+  if (selectedMinutes === 0) {
+    // Бесконечный режим — без таймера
+    if (gameTimerBar) gameTimerBar.classList.add('hidden');
+    return;
+  }
+
+  const totalMs = selectedMinutes * 60 * 1000;
+  gameTimerEnd = Date.now() + totalMs;
+
+  // Показать полоску
+  if (gameTimerBar) gameTimerBar.classList.remove('hidden');
+  if (gameTimerFill) {
+    gameTimerFill.style.transform = 'scaleX(1)';
+    gameTimerFill.classList.remove('warning');
+  }
+
+  // Обновляем каждую секунду
+  gameTimerInterval = setInterval(() => {
+    const remaining = gameTimerEnd - Date.now();
+    const total = selectedMinutes * 60 * 1000;
+
+    if (remaining <= 0) {
+      // Время вышло!
+      clearInterval(gameTimerInterval);
+      gameTimerInterval = null;
+      onTimeUp();
+      return;
+    }
+
+    const fraction = remaining / total;
+    if (gameTimerFill) {
+      gameTimerFill.style.transform = `scaleX(${fraction})`;
+    }
+
+    // Предупреждение за 30 секунд
+    if (remaining <= 30000 && gameTimerFill && !gameTimerFill.classList.contains('warning')) {
+      gameTimerFill.classList.add('warning');
+    }
+  }, 1000);
+}
+
+function stopGameTimer() {
+  if (gameTimerInterval) {
+    clearInterval(gameTimerInterval);
+    gameTimerInterval = null;
+  }
+  if (gameTimerBar) gameTimerBar.classList.add('hidden');
+  if (gameTimerFill) gameTimerFill.classList.remove('warning');
+  if (timeUpOverlay) timeUpOverlay.classList.add('hidden');
+}
+
+function onTimeUp() {
+  // Показываем «Отличная работа!»
+  if (timeUpOverlay) timeUpOverlay.classList.remove('hidden');
+  if (gameTimerBar) gameTimerBar.classList.add('hidden');
+  
+  // Через 3 секунды — плавный выход
+  setTimeout(() => {
+    showHome();
+  }, 3000);
 }
 
 // ====== ЗАЩИТА (ВЫХОД ПО CTRL+SHIFT+Q) ======
