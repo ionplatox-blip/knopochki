@@ -66,8 +66,7 @@ function showPage(pageId) {
 
 window.showHome = function() {
   stopGame();
-  // UNLOCK: выходим из fullscreen и снимаем beforeunload
-  exitFullscreen();
+  // UNLOCK: снимаем beforeunload
   window.removeEventListener('beforeunload', warnBeforeLeave);
   showPage('home');
 }
@@ -90,8 +89,7 @@ window.startGame = function() {
     AudioSynth.disable();
   }
 
-  // LOCK: полноэкранный режим + защита от закрытия
-  enterFullscreen();
+  // LOCK: защита от закрытия (fullscreen убран — вызывает подвисания)
   window.addEventListener('beforeunload', warnBeforeLeave);
 
   showPage('game');
@@ -259,8 +257,6 @@ window.addEventListener('mousedown', (e) => {
   if (!isGameRunning) return;
   if (mobileExitDialog && !mobileExitDialog.classList.contains('hidden')) return;
   e.preventDefault();
-  // Авто-восстановление fullscreen если ребёнок случайно вышел (Esc)
-  if (!isFullscreen()) enterFullscreen();
   if (!handleUserInput()) return;
   if (window.gameEngines && window.gameEngines[currentGame] && window.gameEngines[currentGame].onMouseDown) {
     window.gameEngines[currentGame].onMouseDown(e.clientX, e.clientY);
@@ -281,8 +277,6 @@ window.addEventListener('touchstart', (e) => {
   // Не перехватываем, если открыт диалог выхода — пусть кнопки работают
   if (mobileExitDialog && !mobileExitDialog.classList.contains('hidden')) return;
   e.preventDefault(); // Блокируем зум и скролл в игре
-  // Авто-восстановление fullscreen
-  if (!isFullscreen()) enterFullscreen();
   if (!handleUserInput()) return;
   const touch = e.touches[0];
   if (touch && window.gameEngines && window.gameEngines[currentGame] && window.gameEngines[currentGame].onMouseDown) {
